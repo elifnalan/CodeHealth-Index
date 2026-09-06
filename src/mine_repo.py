@@ -67,6 +67,7 @@ for filepath, stats in file_stats.items():
 
         print(f"File: {filepath}, Churn: {stats['churn']}, Commits: {stats['num_commits']}, Authors: {len(stats['authors'])}")
 
+
 #inserting the data into a csv file
 df = pd.DataFrame(rows)
 df.to_csv("raw_metrics.csv", index=False)
