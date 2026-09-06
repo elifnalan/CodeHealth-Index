@@ -1,6 +1,13 @@
+# This script is used to mine the repository and extract the file statistics such as churn, 
+# number of commits, and number of authors for each file in the repository. 
+# The data is then stored in a CSV file for further analysis.
+
+
+
 from pydriller import Repository
 from collections import defaultdict
 import pandas as pd
+from radon.complexity import cc_visit
 
 # Storing the file statistics in a dictionary with default values
 file_stats = defaultdict(lambda: {
@@ -16,6 +23,18 @@ file_stats = defaultdict(lambda: {
 # Repo used for this project:
 repo = Repository("../requests")
 
+# A function to calculate the complexity of a file using radon library
+def get_file_complexity(filepath):
+    """Sum all function/class complexity scores in a file into one total."""
+    try:
+        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+            source = f.read()
+        blocks = cc_visit(source)
+        return sum(block.complexity for block in blocks)
+    except Exception:
+        return None  # file might not exist, might not be valid Python, etc.
+
+    
 
 # Traversing through the commits in the repository
 for commit in repo.traverse_commits():
@@ -63,9 +82,12 @@ for filepath, stats in file_stats.items():
             "churn" : stats["churn"],
             "num_commits" : stats["num_commits"],
             "num_authors" : len(stats["authors"]),
+
+            #calculating the complexity once, for each file that is inserted into the databse 
+            "complexity" : get_file_complexity(f"../requests/{filepath}")
         })
 
-        print(f"File: {filepath}, Churn: {stats['churn']}, Commits: {stats['num_commits']}, Authors: {len(stats['authors'])}")
+        # print(f"File: {filepath}, Churn: {stats['churn']}, Commits: {stats['num_commits']}, Authors: {len(stats['authors'])}")
 
 
 #inserting the data into a csv file
