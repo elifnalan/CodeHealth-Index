@@ -38,6 +38,7 @@ file_stats = defaultdict(lambda: {
 # Repo used for this project:
 repo = Repository("../requests")
 
+
 # A function to calculate the complexity of a file using radon library
 def get_file_complexity(filepath):
     """Sum all function/class complexity scores in a file into one total."""

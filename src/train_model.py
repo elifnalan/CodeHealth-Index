@@ -9,8 +9,14 @@
 
 
 import pandas as pd
+import os
 
+
+
+# onyl keeping the files that are Python files
+# filtering non-Python files and files
 df = pd.read_csv("raw_metrics.csv")
+df = df[df["filepath"].str.endswith(".py")].copy()
 
 df["bugfix_ratio"] = df["bugfix_commits"] / df["num_commits"]
 bug_rate = df["bugfix_ratio"].median()
@@ -18,13 +24,13 @@ bug_rate = df["bugfix_ratio"].median()
 threshold = df["bugfix_ratio"].quantile(0.75)
 df["is_risky"] = (df["bugfix_ratio"] > threshold).astype(int)
 
-#sorting the dataframe by modifcation
+#sorting the dataframe by modifcation date
 
 #first, converting the last_modified column to datetime format
 df["last_modified"] = pd.to_datetime(df["last_modified"], utc=True)
 
 #then sorting the dataframe by last_modified in ascending order
-#as a result, older records will be at the bottom and newer records will be at the top of the dataframe
+#as a result, older records will be at the top and newer records will be at the bottom of the dataframe
 df_sorted = df.sort_values(by="last_modified", ascending=True)
 
 #creating the split for training and testing data, 80/20 split is used here
@@ -35,7 +41,16 @@ split_index = int(total_rows * 0.8) #split index for 80% of the data
 train_df = df_sorted.iloc[:split_index]
 test_df = df_sorted.iloc[split_index:]
 
-print("Train rows:", len(train_df))
-print("Test rows:", len(test_df))
-print("Train date range:", train_df["last_modified"].min(), "to", train_df["last_modified"].max())
-print("Test date range:", test_df["last_modified"].min(), "to", test_df["last_modified"].max())
+# features used for training the model, these features are selected based on their relevance to the riskiness of a file
+# label is the riskiness of a file, which is determined based on the bugfix ratio and the threshold calculated earlier
+features = ["churn", "num_commits", "num_authors"]
+#, "complexity"] complexity is eliminated from features as it shrinks the dataset significantly
+X_train = train_df[features]
+y_train = train_df["is_risky"]
+X_test = test_df[features]
+y_test = test_df["is_risky"]
+
+print(X_train.isna().sum())
+
+py_files = df[df["filepath"].str.endswith(".py")]
+print(len(py_files))
