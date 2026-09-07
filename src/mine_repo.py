@@ -28,6 +28,9 @@ file_stats = defaultdict(lambda: {
     # number of commits that are identified as bugfix commits based on the commit message
     "bugfix_commits": 0,
 
+    # will be using the modifcation date to for training 
+    "last_modified": None,
+
     "authors": set(),
 })
 
@@ -64,8 +67,9 @@ for commit in repo.traverse_commits():
             file_stats[new_path]["num_commits"] += file_stats[old_path]["num_commits"]
             file_stats[new_path]["authors"].update(file_stats[old_path]["authors"])
             file_stats[new_path]["bugfix_commits"] += file_stats[old_path]["bugfix_commits"]
+            file_stats[new_path]["last_modified"] = file_stats[old_path]["last_modified"]
 
-            file_stats[old_path] = {"churn": 0, "num_commits": 0, "authors": set(), "bugfix_commits": 0}  # Reset old path stats
+            file_stats[old_path] = {"churn": 0, "num_commits": 0, "authors": set(), "bugfix_commits": 0, "last_modified": None}  # Reset old path stats
             
             #print(f"RENAME detected: {old_path} -> {new_path}")
         if not mod.new_path:
@@ -76,6 +80,7 @@ for commit in repo.traverse_commits():
         file_stats[mod.new_path]["num_commits"] += 1
         # becasue the username can change, storing the email of the author instead of the username
         file_stats[mod.new_path]["authors"].add(commit.author.email)
+        file_stats[mod.new_path]["last_modified"] = commit.author_date
 
         # identifying if the commit is a bugfix based on the commit message using regex
         is_bugfix = bool(BUGFIX_PATTERN.search(commit.msg))
@@ -107,6 +112,7 @@ for filepath, stats in file_stats.items():
             "num_commits" : stats["num_commits"],
             "num_authors" : len(stats["authors"]),
             "bugfix_commits" : stats["bugfix_commits"],
+            "last_modified" : stats["last_modified"],
 
             #calculating the complexity once, for each file that is inserted into the databse 
             "complexity" : get_file_complexity(f"../requests/{filepath}")
