@@ -10,7 +10,9 @@
 
 import pandas as pd
 import os
-
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from sklearn.preprocessing import StandardScaler
 
 
 # onyl keeping the files that are Python files
@@ -50,7 +52,21 @@ y_train = train_df["is_risky"]
 X_test = test_df[features]
 y_test = test_df["is_risky"]
 
-print(X_train.isna().sum())
+#Standartizing the data to have each of the features to make meaningful contribution 
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-py_files = df[df["filepath"].str.endswith(".py")]
-print(len(py_files))
+
+#the model we will be using to train is a logistic regression model, which is suitable for binary classification tasks like this one
+model = LogisticRegression()
+model.fit(X_train_scaled, y_train)
+
+#testing the model on the test data and calculating the AUC score to evaluate its performance
+y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
+auc = roc_auc_score(y_test, y_pred_proba)
+
+print(f"AUC: {auc}")
+
+for feature, coef in zip(features, model.coef_[0]):
+    print(feature, coef)
