@@ -70,3 +70,8 @@ print(f"AUC: {auc}")
 
 for feature, coef in zip(features, model.coef_[0]):
     print(feature, coef)
+
+import joblib
+
+joblib.dump(model, "risk_model.pkl")
+joblib.dump(scaler, "scaler.pkl")
