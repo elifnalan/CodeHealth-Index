@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import os
 import joblib
@@ -27,4 +28,11 @@ def get_risk_scores():
 
     df["risk_score"] = model.predict_proba(X_scaled)[:, 1]
 
-    return df[["filepath", "risk_score"]].to_dict(orient="records")
+    return df[["filepath", "risk_score", "churn", "num_commits", "num_authors"]].to_dict(orient="records")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
