@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+</head>
+<body>
+  <div id="chart"></div>
+
+  <script>
+    fetch("http://127.0.0.1:8000/risk-scores")
+      .then(response => response.json())
+      .then(data => {
+        // Reshape flat API response into the {name, children} format D3's hierarchy expects
+        const treeData = {
+            name: "root",
+            children: data.map(d => ({
+                name: d.filepath,
+                value: d.risk_score,
+                churn: d.churn,
+                num_commits: d.num_commits,
+                num_authors: d.num_authors
+            }))
+            };
+
+        const width = 1200;
+        const height = 800;
+
+        const root = d3.hierarchy(treeData).sum(d => d.value);
+
+        d3.treemap()
+          .size([width, height])
+          .padding(2)(root);
+
+        const svg = d3.select("#chart")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height);
+
+        // Domain reversed [1, 0] so risk_score=1 maps to red, not green
+        const colorScale = d3.scaleSequential()
+          .domain([1, 0])
+          .interpolator(d3.interpolateRdYlGn);
+
+          svg.selectAll("rect")
+  .data(root.leaves())
+  .join("rect")
+  .attr("x", d => d.x0)
+  .attr("y", d => d.y0)
+  .attr("width", d => d.x1 - d.x0)
+  .attr("height", d => d.y1 - d.y0)
+  .attr("fill", d => colorScale(d.data.value));
+
+svg.selectAll("text")
+  .data(root.leaves())
+  .join("text")
+  .attr("x", d => d.x0 + 4)
+  .attr("y", d => d.y0 + 14)
+  .text(d => d.data.name.split("\\").pop())
+  .attr("font-size", "10px")
+  .attr("fill", "white")
+  .attr("stroke", "black")
+  .attr("stroke-width", "0.3px");
+      })
+      .catch(error => console.error("Failed to load risk scores:", error));
+  </script>
+</body>
+</html>
