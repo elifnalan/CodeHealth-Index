@@ -1,65 +1,349 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <style>
+    :root {
+      --bg: #14161a;
+      --panel: #1b1e24;
+      --text: #eeece6;
+      --muted: #8b8f98;
+      --rule: #2c2f37;
+      --low: #5b7c99;
+      --high: #e8853a;
+      --pink: #eb8bc8;
+    }
+    body {
+      font-family: "Inter", -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 40px 32px;
+      max-width: 1100px;
+    }
+    svg {
+      max-width: 100%;
+      height: auto;
+    }
+    h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-weight: 600;
+      font-size: 30px;
+      margin: 0 0 10px 0;
+      letter-spacing: -0.01em;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 14.5px;
+      line-height: 1.6;
+      max-width: 640px;
+      margin: 0 0 8px 0;
+    }
+    .subtitle code, .method-step p code {
+      font-family: ui-monospace, "SF Mono", Consolas, monospace;
+      background: var(--panel);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.92em;
+      color: var(--text);
+    }
+    .method {
+      display: flex;
+      gap: 28px;
+      margin: 24px 0 32px 0;
+      padding: 20px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+    }
+    .method-step {
+      flex: 1;
+    }
+    .method-num {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 20px;
+      color: var(--high);
+      display: block;
+      margin-bottom: 6px;
+    }
+    .method-step h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0 0 4px 0;
+    }
+    .method-step p {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+    .axis path, .axis line {
+      stroke: var(--rule);
+    }
+    .axis text {
+      fill: var(--muted);
+      font-size: 12px;
+      font-family: "Inter", sans-serif;
+    }
+    .axis-label {
+      font-size: 13px;
+      fill: var(--muted);
+    }
+    .dot {
+      stroke: rgba(0,0,0,0.25);
+      stroke-width: 0.5px;
+    }
+    .annotation-text {
+      font-size: 12.5px;
+      fill: var(--text);
+      font-family: "Inter", sans-serif;
+    }
+    .annotation-line {
+      stroke: var(--muted);
+      stroke-width: 1px;
+      stroke-dasharray: 2,2;
+    }
+    .legend {
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .legend-gradient {
+      width: 130px;
+      height: 6px;
+      background: linear-gradient(to right, var(--low), var(--high));
+      border-radius: 3px;
+    }
+    .tooltip {
+      position: absolute;
+      background: #0d0e11;
+      border: 1px solid var(--rule);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      line-height: 1.6;
+    }
+    .tooltip .fname {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .layout {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+    }
+    .chart-col {
+      flex: 1;
+      min-width: 0;
+    }
+    .list-col {
+      flex: 1;
+      padding-top: 4px;
+    }
+    .list-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin: 0 0 14px 0;
+      font-weight: 500;
+    }
+    .file-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 13px;
+    }
+    .file-row:last-child {
+      border-bottom: none;
+    }
+    .file-rank {
+      color: var(--muted);
+      font-size: 11px;
+      width: 14px;
+      flex-shrink: 0;
+    }
+    .file-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .file-name {
+      font-weight: 500;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-meta {
+      color: var(--muted);
+      font-size: 11.5px;
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 <body>
-  <div id="chart"></div>
+  <h1>Where risk accumulates in requests</h1>
+  <p class="subtitle">A model trained on ten years of commit history in psf/requests, predicting which files are most likely to need a bug fix next, based on how often a file changes, how much, and by how many people.</p>
+    <p style="margin-top: 20px; font-size: 12px; color: var(--muted);">
+    Built by <span style="color: var(--pink);">Elif Nalan Mutlu</span> &middot; <a href="https://github.com/elifnalan/CodeHealth-Index"  target="_blank" style="color: var(--muted);">GitHub Repository</a>
+    </p>
+
+
+  <div class="method">
+    <div class="method-step">
+      <span class="method-num">01</span>
+      <h3>Mine</h3>
+      <p>PyDriller walks all 6,500 commits, tracking churn, commit count, and unique authors per file: merging history across renames, like the repo's move into <code>src/</code>.</p>
+    </div>
+    <div class="method-step">
+      <span class="method-num">02</span>
+      <h3>Label</h3>
+      <p>Commit messages are matched against fix/bug/error keywords. A file is labeled high-risk if its bug-fix ratio sits above the 75th percentile."</p>
+    </div>
+    <div class="method-step">
+      <span class="method-num">03</span>
+      <h3>Split</h3>
+      <p>Files are ordered by last-modified date and split 80/20. Training only on the past, testing only on commits made after Feb 2025, to avoid leaking the future into training.</p>
+    </div>
+    <div class="method-step">
+      <span class="method-num">04</span>
+      <h3>Train</h3>
+      <p>A logistic regression on <b>standardized churn, commit count, and author count </b> reaches <strong style="color: var(--text)">0.75 AUC</strong> on files it has never seen.</p>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="chart-col">
+      <div id="chart"></div>
+      <div class="legend">
+        <span>Lower predicted risk</span>
+        <div class="legend-gradient"></div>
+        <span>Higher predicted risk</span>
+      </div>
+    </div>
+    <div class="list-col">
+      <p class="list-title">Highest predicted risk</p>
+      <div id="file-list"></div>
+    </div>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
 
   <script>
     fetch("http://127.0.0.1:8000/risk-scores")
       .then(response => response.json())
       .then(data => {
-        // Reshape flat API response into the {name, children} format D3's hierarchy expects
-        const treeData = {
-            name: "root",
-            children: data.map(d => ({
-                name: d.filepath,
-                value: d.risk_score,
-                churn: d.churn,
-                num_commits: d.num_commits,
-                num_authors: d.num_authors
-            }))
-            };
-
-        const width = 1200;
-        const height = 800;
-
-        const root = d3.hierarchy(treeData).sum(d => d.value);
-
-        d3.treemap()
-          .size([width, height])
-          .padding(2)(root);
+        const width = 640;
+        const height = 480;
+        const margin = { top: 24, right: 30, bottom: 50, left: 55 };
 
         const svg = d3.select("#chart")
           .append("svg")
-          .attr("width", width)
-          .attr("height", height);
+          .attr("viewBox", `0 0 ${width} ${height}`);
 
-        // Domain reversed [1, 0] so risk_score=1 maps to red, not green
+        const xScale = d3.scaleLog()
+          .domain([1, d3.max(data, d => d.num_commits)])
+          .range([margin.left, width - margin.right])
+          .clamp(true);
+
+        const yScale = d3.scaleLog()
+          .domain([1, d3.max(data, d => Math.max(d.churn, 1))])
+          .range([height - margin.bottom, margin.top])
+          .clamp(true);
+
+        const rScale = d3.scaleSqrt()
+          .domain([1, d3.max(data, d => d.num_authors)])
+          .range([4, 20]);
+
         const colorScale = d3.scaleSequential()
-          .domain([1, 0])
-          .interpolator(d3.interpolateRdYlGn);
+          .domain([0, 1])
+          .interpolator(d3.interpolateRgb("#5b7c99", "#e8853a"));
 
-          svg.selectAll("rect")
-  .data(root.leaves())
-  .join("rect")
-  .attr("x", d => d.x0)
-  .attr("y", d => d.y0)
-  .attr("width", d => d.x1 - d.x0)
-  .attr("height", d => d.y1 - d.y0)
-  .attr("fill", d => colorScale(d.data.value));
+        svg.append("g")
+          .attr("class", "axis")
+          .attr("transform", `translate(0, ${height - margin.bottom})`)
+          .call(d3.axisBottom(xScale).ticks(5, "~s"));
 
-svg.selectAll("text")
-  .data(root.leaves())
-  .join("text")
-  .attr("x", d => d.x0 + 4)
-  .attr("y", d => d.y0 + 14)
-  .text(d => d.data.name.split("\\").pop())
-  .attr("font-size", "10px")
-  .attr("fill", "white")
-  .attr("stroke", "black")
-  .attr("stroke-width", "0.3px");
+        svg.append("g")
+          .attr("class", "axis")
+          .attr("transform", `translate(${margin.left}, 0)`)
+          .call(d3.axisLeft(yScale).ticks(5, "~s"));
+
+        svg.append("text")
+          .attr("class", "axis-label")
+          .attr("x", width / 2)
+          .attr("y", height - 12)
+          .attr("text-anchor", "middle")
+          .text("Number of commits  (log scale)");
+
+        svg.append("text")
+          .attr("class", "axis-label")
+          .attr("transform", "rotate(-90)")
+          .attr("x", -height / 2)
+          .attr("y", 20)
+          .attr("text-anchor", "middle")
+          .text("Churn  (log scale)");
+
+        const tooltip = d3.select("#tooltip");
+
+        svg.selectAll("circle")
+          .data(data)
+          .join("circle")
+          .attr("class", "dot")
+          .attr("cx", d => xScale(Math.max(d.num_commits, 1)))
+          .attr("cy", d => yScale(Math.max(d.churn, 1)))
+          .attr("r", d => rScale(d.num_authors))
+          .attr("fill", d => colorScale(d.risk_score))
+          .attr("fill-opacity", 0.9)
+          .on("mouseover", function(event, d) {
+            d3.select(this).attr("stroke", "#eeece6").attr("stroke-width", 1.5);
+            const name = d.filepath.split("\\").pop();
+            tooltip
+              .style("opacity", 1)
+              .html(`
+                <div class="fname">${name}</div>
+                <div class="fpath">${d.filepath}</div>
+                <div style="margin-top:6px">Risk score: ${d.risk_score.toFixed(2)}</div>
+                <div>Churn ${d.churn} &middot; Commits ${d.num_commits} &middot; Authors ${d.num_authors}</div>
+              `);
+          })
+          .on("mousemove", (event) => {
+            tooltip
+              .style("left", (event.pageX + 16) + "px")
+              .style("top", (event.pageY - 12) + "px");
+          })
+          .on("mouseout", function() {
+            d3.select(this).attr("stroke", "rgba(0,0,0,0.25)").attr("stroke-width", 0.5);
+            tooltip.style("opacity", 0);
+          });
+
+        // Ranked list of highest-risk files, shown beside the chart
+        const topFiles = [...data]
+          .sort((a, b) => b.risk_score - a.risk_score)
+          .slice(0, 8);
+
+        const listEl = d3.select("#file-list");
+
+        topFiles.forEach((d, i) => {
+          const name = d.filepath.split("\\").pop();
+          const row = listEl.append("div").attr("class", "file-row");
+          row.append("span").attr("class", "file-rank").text(i + 1);
+          row.append("span")
+            .attr("class", "file-dot")
+            .style("background", colorScale(d.risk_score));
+          row.append("span").attr("class", "file-name").text(name);
+          row.append("span").attr("class", "file-meta").text(`${d.num_commits} commits`);
+        });
       })
       .catch(error => console.error("Failed to load risk scores:", error));
   </script>
