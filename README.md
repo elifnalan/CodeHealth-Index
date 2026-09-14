@@ -36,6 +36,7 @@ Python · PyDriller · pandas · scikit-learn · FastAPI · D3.js
 
 ## Running it locally
 
+```bash
 git clone https://github.com/elifnalan/CodeHealth-Index.git
 cd CodeHealth-Index
 python -m venv venv
@@ -50,8 +51,8 @@ python train_model.py   # labels, splits, trains, saves risk_model.pkl + scaler.
 uvicorn api:app --reload
 
 # then open src/index.html directly in a browser
-# then open http://127.0.0.1:5500/index.html
 ```
 
 ## Screenshot
+
 ![Dashboard screenshot](screenshots/dashboard.png)
