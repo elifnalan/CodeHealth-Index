@@ -56,3 +56,7 @@ uvicorn api:app --reload
 ## Screenshot
 
 ![Dashboard screenshot](screenshots/dashboard.png)
+
+## Demo Video
+
+![Dashboard demo](screenshots/demo.mp4)
