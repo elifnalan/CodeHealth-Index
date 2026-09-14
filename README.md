@@ -59,4 +59,4 @@ uvicorn api:app --reload
 
 ## Demo Video
 
-![video](https://github.com/user-attachments/assets/4a2b7a81-9d18-4c24-b3b5-1e0abdef2c77)
+https://github.com/user-attachments/assets/4a2b7a81-9d18-4c24-b3b5-1e0abdef2c77
